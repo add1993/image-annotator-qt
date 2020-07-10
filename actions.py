@@ -45,6 +45,8 @@ class ImageViewer:
         self.qlabel_image.mousePressEvent = self.mousePressAction
         self.qlabel_image.mouseMoveEvent = self.mouseMoveAction
         self.qlabel_image.mouseReleaseEvent = self.mouseReleaseAction
+        self.parent.remove_object.clicked.connect(self.removeSel)
+        self.parent.add_object.clicked.connect(self.takeinputs)
 
     def onResize(self):
         ''' things to do when qlabel_image is resized '''
@@ -90,10 +92,10 @@ class ImageViewer:
                         comboBox.addItem(params["id"])
 
                     hlayout.addWidget(comboBox)
-                    del_button = QPushButton('Delete')
+                    #del_button = QPushButton('Remove')
                     add_button = QPushButton('Add')
                     hlayout.addWidget(add_button)
-                    hlayout.addWidget(del_button)
+                    #hlayout.addWidget(del_button)
 
                 hlayout.addStretch()
 
@@ -117,6 +119,36 @@ class ImageViewer:
             self.update(instance)
         else:
             self.statusbar.showMessage('Cannot open this image! Try another one.', 5000)
+
+    def removeSel(self):
+        listItems = self.parent.qlist_objects.selectedItems()
+        if not listItems: return
+        for item in listItems:
+            selected = self.parent.qlist_objects.takeItem(self.parent.qlist_objects.row(item))
+            del selected
+
+    def takeinputs(self):
+        object_type, done = QInputDialog.getText(self.parent, 'Input Dialog', 'Enter new object')
+
+        if done is True and object_type != '':
+            hlayout = QHBoxLayout()
+            obj_type_label = QLabel()
+            obj_type_label.setText(object_type)
+            hlayout.addWidget(obj_type_label)
+            comboBox = CheckableComboBox(self.parent)
+            hlayout.addWidget(comboBox)
+            add_button = QPushButton('Add')
+            hlayout.addWidget(add_button)
+
+            hlayout.addStretch()
+            hlayout.setSizeConstraint(QLayout.SetFixedSize)
+            widget = QWidget()
+            widget.setLayout(hlayout)
+            itemN = QListWidgetItem()
+            itemN.setSizeHint(widget.sizeHint())
+            self.parent.qlist_objects.addItem(itemN)
+            self.parent.qlist_objects.setItemWidget(itemN, widget)
+
 
     def update(self, instance=None):
         ''' This function actually draws the scaled image to the qlabel_image.
