@@ -61,6 +61,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
         self.open_folder.clicked.connect(self.selectDir)
         self.next_im.clicked.connect(self.nextImg)
         self.prev_im.clicked.connect(self.prevImg)
+        self.save_im.clicked.connect(self.image_viewer.saveJson)
         self.qlist_images.itemClicked.connect(self.item_click)
         # self.save_im.clicked.connect(self.saveImg)
 
@@ -112,6 +113,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             self.image_viewer.loadImage(self.logs[self.cntr]['path'], self.instances[self.cntr])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
+            self.image_viewer.saveJson()
         else:
             QMessageBox.warning(self, 'Sorry', 'No more Images!')
 
@@ -121,6 +123,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             self.image_viewer.loadImage(self.logs[self.cntr]['path'], self.instances[self.cntr])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
+            self.image_viewer.saveJson()
         else:
             QMessageBox.warning(self, 'Sorry', 'No previous Image!')
 

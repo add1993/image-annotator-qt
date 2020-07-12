@@ -1,26 +1,22 @@
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt
-
-__author__ = "Atinderpal Singh"
-__license__ = "MIT"
-__version__ = "1.0"
-__email__ = "atinderpalap@gmail.com"
-
+from PyQt5.QtCore import Qt, QSize, QPoint
+import json
 
 # subclass
 class CheckableComboBox(QComboBox):
     # once there is a checkState set, it is rendered
     # here we assume default Unchecked
+    #self.entry = None
     def addItem(self, item):
         super(CheckableComboBox, self).addItem(item)
-        item = self.model().item(self.count()-1,0)
+        item = self.model().item(self.count() - 1, 0)
         item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
         item.setCheckState(QtCore.Qt.Checked)
 
     def itemChecked(self, index):
-        item = self.model().item(i,0)
+        item = self.model().item(index, 0)
         return item.checkState() == QtCore.Qt.Checked
 
 class ImageViewer:
@@ -46,7 +42,58 @@ class ImageViewer:
         self.qlabel_image.mouseMoveEvent = self.mouseMoveAction
         self.qlabel_image.mouseReleaseEvent = self.mouseReleaseAction
         self.parent.remove_object.clicked.connect(self.removeSel)
-        self.parent.add_object.clicked.connect(self.takeinputs)
+        self.parent.add_object.clicked.connect(self.addObject)
+        self.parent.add_instance.clicked.connect(self.addInstance)
+        self.parent.save_json.clicked.connect(self.saveJson)
+
+    def addInstance(self):
+        listItems = self.parent.qlist_objects.selectedItems()
+        if listItems is None or len(listItems) == 0:
+            print('Please select some objects')
+            return
+        instance, done = QInputDialog.getText(self.parent, 'Input Dialog', 'Enter new instance')
+
+        if done is True and instance != '':
+            for item in listItems:
+                widget = self.parent.qlist_objects.itemWidget(item)
+                for ch in widget.children():
+                    if (ch.__class__.__name__ == 'CheckableComboBox'):
+                        ch.addItem(instance)
+                        break
+
+    def saveJson(self):
+        remaining_instances = []
+        for index in range(self.parent.qlist_objects.count()):
+            item = self.parent.qlist_objects.item(index)
+            widget = self.parent.qlist_objects.itemWidget(item)
+            curr_obj_dict = {}
+            label_widget = None
+            combobox_widget = None
+            for ch in widget.children():
+                if (ch.__class__.__name__ == 'QLabel'):
+                    label_widget = ch
+                elif (ch.__class__.__name__ == 'CheckableComboBox'):
+                    combobox_widget = ch
+
+            label_txt = label_widget.text()
+            curr_obj_dict[label_txt] = []
+            for i in range(combobox_widget.count()):
+                if combobox_widget.itemChecked(i):
+                    inst_dict = {}
+                    txt = combobox_widget.itemText(i)
+                    split = txt.split(':')
+                    inst_dict['id'] = split[0]
+                    inst_dict['bbox'] = None
+                    if len(split) == 2:
+                        inst_dict['bbox'] = json.loads(split[1])
+                    curr_obj_dict[label_txt].append(inst_dict)
+
+            remaining_instances.append(curr_obj_dict)
+
+        self.parent.json_data['samples'][self.parent.cntr]['instances'] = remaining_instances
+
+        with open(self.parent.json_file, 'w') as outfile:
+            json.dump(self.parent.json_data, outfile, indent=4)
 
     def onResize(self):
         ''' things to do when qlabel_image is resized '''
@@ -57,6 +104,7 @@ class ImageViewer:
 
     def loadImage(self, imagePath, instance=None):
         ''' To load and display new image.'''
+        instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
         self.qimage = QImage(imagePath)
         if instance is not None:
             penRectangle = QPen(Qt.green)
@@ -77,28 +125,33 @@ class ImageViewer:
                     hlayout.addWidget(obj_type_label)
                     attrib = object_dict[object_type]
                     comboBox = CheckableComboBox(self.parent)
+                    comboBox.setStyleSheet('''*    
+                    QComboBox QAbstractItemView 
+                        {
+                        min-width: 120px;
+                        }
+                    ''')
 
                     for j in range(len(attrib)):
                         params = attrib[j]
                         bbox = params["bbox"]
                         painterInstance.setPen(penRectangle)
-                        painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
+                        if bbox is not None:
+                            painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
 
                         penText = QPen(Qt.red)
                         penText.setWidth(10)
                         painterInstance.setPen(penText)
                         painterInstance.setFont(QFont('Decorative', 0.05 * img_height))
-                        painterInstance.drawText(bbox[0], max(bbox[1] - 20, 20), params["id"])
-                        comboBox.addItem(params["id"])
+                        if bbox is not None:
+                            painterInstance.drawText(bbox[0], max(bbox[1] - 20, 20), params["id"])
+                            comboBox.addItem(params["id"] + ':' + '['+str(int(bbox[0])) +','+str(int(bbox[1]))+','+str(int(bbox[2]))+','+str(int(bbox[3]))+']')
+                        else:
+                            comboBox.addItem(params["id"])
 
                     hlayout.addWidget(comboBox)
-                    #del_button = QPushButton('Remove')
-                    add_button = QPushButton('Add')
-                    hlayout.addWidget(add_button)
-                    #hlayout.addWidget(del_button)
 
                 hlayout.addStretch()
-
                 hlayout.setSizeConstraint(QLayout.SetFixedSize)
 
                 widget = QWidget()
@@ -127,7 +180,7 @@ class ImageViewer:
             selected = self.parent.qlist_objects.takeItem(self.parent.qlist_objects.row(item))
             del selected
 
-    def takeinputs(self):
+    def addObject(self):
         object_type, done = QInputDialog.getText(self.parent, 'Input Dialog', 'Enter new object')
 
         if done is True and object_type != '':
@@ -137,8 +190,6 @@ class ImageViewer:
             hlayout.addWidget(obj_type_label)
             comboBox = CheckableComboBox(self.parent)
             hlayout.addWidget(comboBox)
-            add_button = QPushButton('Add')
-            hlayout.addWidget(add_button)
 
             hlayout.addStretch()
             hlayout.setSizeConstraint(QLayout.SetFixedSize)
