@@ -434,7 +434,7 @@
        </layout>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,3,48">
+       <layout class="QVBoxLayout" name="verticalLayout_10" stretch="1,2,48">
         <property name="spacing">
          <number>5</number>
         </property>
@@ -473,69 +473,7 @@ color:white;</string>
           </property>
          </widget>
         </item>
-        <item>
-         <widget class="QLabel" name="label_4">
-          <property name="font">
-           <font>
-            <family>Sans Serif</family>
-            <pointsize>10</pointsize>
-            <weight>50</weight>
-            <bold>false</bold>
-            <kerning>true</kerning>
-           </font>
-          </property>
-          <property name="layoutDirection">
-           <enum>Qt::LeftToRight</enum>
-          </property>
-          <property name="styleSheet">
-           <string notr="true">background-color:white</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Box</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Sunken</enum>
-          </property>
-          <property name="lineWidth">
-           <number>1</number>
-          </property>
-          <property name="text">
-           <string>List of Images</string>
-          </property>
-          <property name="textFormat">
-           <enum>Qt::AutoText</enum>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="margin">
-           <number>4</number>
-          </property>
-          <property name="indent">
-           <number>-1</number>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QListWidget" name="qlist_images">
-          <property name="styleSheet">
-           <string notr="true">background-color:white</string>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::Box</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Plain</enum>
-          </property>
-          <property name="layoutMode">
-           <enum>QListView::Batched</enum>
-          </property>
-          <property name="batchSize">
-           <number>5</number>
-          </property>
-         </widget>
-        </item>
-		
+        
 		<item>
          <widget class="QLabel" name="label_5">
           <property name="font">
@@ -639,6 +577,76 @@ color:white;</string>
 					 </widget>
 				 </item>
 				 <item>
+					 <widget class="QPushButton" name="add_instance">
+					  <property name="font">
+					   <font>
+						<pointsize>9</pointsize>
+					   </font>
+					  </property>
+					  <property name="cursor">
+					   <cursorShape>PointingHandCursor</cursorShape>
+					  </property>
+					  <property name="focusPolicy">
+					   <enum>Qt::StrongFocus</enum>
+					  </property>
+					  <property name="autoFillBackground">
+					   <bool>false</bool>
+					  </property>
+					  <property name="styleSheet">
+					   <string notr="true">background-color: black; /* Blue */
+			padding:10px;
+			color:white;</string>
+					  </property>
+					  <property name="text">
+					   <string>Add Instance</string>
+					  </property>
+					  <property name="autoDefault">
+					   <bool>false</bool>
+					  </property>
+					  <property name="default">
+					   <bool>false</bool>
+					  </property>
+					  <property name="flat">
+					   <bool>false</bool>
+					  </property>
+					 </widget>
+				 </item>
+				 <item>
+					 <widget class="QPushButton" name="save_json">
+					  <property name="font">
+					   <font>
+						<pointsize>9</pointsize>
+					   </font>
+					  </property>
+					  <property name="cursor">
+					   <cursorShape>PointingHandCursor</cursorShape>
+					  </property>
+					  <property name="focusPolicy">
+					   <enum>Qt::StrongFocus</enum>
+					  </property>
+					  <property name="autoFillBackground">
+					   <bool>false</bool>
+					  </property>
+					  <property name="styleSheet">
+					   <string notr="true">background-color: black; /* Blue */
+			padding:10px;
+			color:white;</string>
+					  </property>
+					  <property name="text">
+					   <string>Save</string>
+					  </property>
+					  <property name="autoDefault">
+					   <bool>false</bool>
+					  </property>
+					  <property name="default">
+					   <bool>false</bool>
+					  </property>
+					  <property name="flat">
+					   <bool>false</bool>
+					  </property>
+					 </widget>
+				 </item>
+				 <item>
 					 <widget class="QPushButton" name="remove_object">
 					  <property name="font">
 					   <font>
@@ -660,7 +668,7 @@ color:white;</string>
 			color:white;</string>
 					  </property>
 					  <property name="text">
-					   <string>Remove Selected</string>
+					   <string>Remove</string>
 					  </property>
 					  <property name="autoDefault">
 					   <bool>false</bool>
@@ -673,8 +681,72 @@ color:white;</string>
 					  </property>
 					 </widget>
 				 </item>
+				 
 			 </layout>
         </item>
+		<item>
+         <widget class="QLabel" name="label_4">
+          <property name="font">
+           <font>
+            <family>Sans Serif</family>
+            <pointsize>10</pointsize>
+            <weight>50</weight>
+            <bold>false</bold>
+            <kerning>true</kerning>
+           </font>
+          </property>
+          <property name="layoutDirection">
+           <enum>Qt::LeftToRight</enum>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">background-color:white</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Sunken</enum>
+          </property>
+          <property name="lineWidth">
+           <number>1</number>
+          </property>
+          <property name="text">
+           <string>List of Images</string>
+          </property>
+          <property name="textFormat">
+           <enum>Qt::AutoText</enum>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignCenter</set>
+          </property>
+          <property name="margin">
+           <number>4</number>
+          </property>
+          <property name="indent">
+           <number>-1</number>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QListWidget" name="qlist_images">
+          <property name="styleSheet">
+           <string notr="true">background-color:white</string>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::Box</enum>
+          </property>
+          <property name="frameShadow">
+           <enum>QFrame::Plain</enum>
+          </property>
+          <property name="layoutMode">
+           <enum>QListView::Batched</enum>
+          </property>
+          <property name="batchSize">
+           <number>5</number>
+          </property>
+         </widget>
+        </item>
+		
        </layout>
       </item>
      </layout>
