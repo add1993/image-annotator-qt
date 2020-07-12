@@ -49,7 +49,7 @@ class ImageViewer:
     def addInstance(self):
         listItems = self.parent.qlist_objects.selectedItems()
         if listItems is None or len(listItems) == 0:
-            print('Please select some objects')
+            QMessageBox.warning(self.parent, 'No object selected', 'Please select an object to add instances to')
             return
         instance, done = QInputDialog.getText(self.parent, 'Input Dialog', 'Enter new instance')
 
@@ -102,7 +102,7 @@ class ImageViewer:
         self.qimage_scaled = self.qimage.scaled(self.qlabel_image.width() * self.zoomX, self.qlabel_image.height() * self.zoomX, QtCore.Qt.KeepAspectRatio)
         self.update(self.instance)
 
-    def loadImage(self, imagePath, instance=None):
+    def loadImage(self, imagePath):
         ''' To load and display new image.'''
         instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
         self.qimage = QImage(imagePath)
@@ -175,7 +175,9 @@ class ImageViewer:
 
     def removeSel(self):
         listItems = self.parent.qlist_objects.selectedItems()
-        if not listItems: return
+        if not listItems:
+            QMessageBox.warning(self.parent, 'No object selected', 'Please select some objects to remove')
+            return
         for item in listItems:
             selected = self.parent.qlist_objects.takeItem(self.parent.qlist_objects.row(item))
             del selected
