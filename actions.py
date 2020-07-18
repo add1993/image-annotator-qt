@@ -134,17 +134,22 @@ class ImageViewer:
 
                     for j in range(len(attrib)):
                         params = attrib[j]
+                        metadata = ''
                         bbox = params["bbox"]
+                        if 'metadata' in params:
+                            metadata = params["metadata"]
                         painterInstance.setPen(penRectangle)
-                        if bbox is not None:
+                        if bbox is not None and len(bbox) == 4:
                             painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
 
                         penText = QPen(Qt.red)
-                        penText.setWidth(10)
+                        penText.setWidth(1)
                         painterInstance.setPen(penText)
-                        painterInstance.setFont(QFont('Decorative', 0.05 * img_height))
-                        if bbox is not None:
-                            painterInstance.drawText(bbox[0], max(bbox[1] - 20, 20), params["id"])
+                        painterInstance.setFont(QFont('Decorative', 12))
+                        if metadata != '':
+                            comboBox.addItem(params["id"] + '-'+metadata)
+                        elif bbox is not None and len(bbox) == 4:
+                            painterInstance.drawText(max(bbox[0], 50), max(bbox[1] - 20, 50), params["id"])
                             comboBox.addItem(params["id"] + ':' + '['+str(int(bbox[0])) +','+str(int(bbox[1]))+','+str(int(bbox[2]))+','+str(int(bbox[3]))+']')
                         else:
                             comboBox.addItem(params["id"])
@@ -171,7 +176,8 @@ class ImageViewer:
             self.qimage_scaled = self.qimage.scaled(self.qlabel_image.width(), self.qlabel_image.height(), QtCore.Qt.KeepAspectRatio)
             self.update(instance)
         else:
-            self.statusbar.showMessage('Cannot open this image! Try another one.', 5000)
+            pass
+            #self.statusbar.showMessage('Cannot open this image! Try another one.', 5000)
 
     def removeSel(self):
         listItems = self.parent.qlist_objects.selectedItems()

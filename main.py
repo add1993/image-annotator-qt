@@ -42,9 +42,8 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             if self.json_data is not None:
                 img_arr = self.json_data["samples"]
                 for i in range(len(img_arr)):
-                    image_obj = {'name': img_arr[i]["id"], 'path': img_arr[i]["img_path"]}
+                    image_obj = {'name': str(img_arr[i]["id"]), 'path': img_arr[i]["img_path"]}
                     image_list.append(image_obj)
-
             return image_list
 
         if os.path.isdir(folder):
@@ -53,6 +52,8 @@ class Iwindow(QtWidgets.QMainWindow, gui):
                     im_path = os.path.join(folder, file)
                     image_obj = {'name': file, 'path': im_path}
                     image_list.append(image_obj)
+
+
         return image_list
 
     def __connectEvents(self):
@@ -117,8 +118,8 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
-            self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
-            self.image_viewer.saveJson()
+            #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
+            #self.image_viewer.saveJson()
         else:
             QMessageBox.warning(self, 'Sorry', 'No more Images!')
 
@@ -129,8 +130,8 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
-            self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
-            self.image_viewer.saveJson()
+            #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
+            #self.image_viewer.saveJson()
         else:
             QMessageBox.warning(self, 'Sorry', 'No previous Image!')
 
