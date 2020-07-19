@@ -119,7 +119,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
             #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
-            #self.image_viewer.saveJson()
+            self.image_viewer.saveJson()
         else:
             QMessageBox.warning(self, 'Sorry', 'No more Images!')
 
@@ -131,7 +131,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
             #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
-            #self.image_viewer.saveJson()
+            self.image_viewer.saveJson()
         else:
             QMessageBox.warning(self, 'Sorry', 'No previous Image!')
 
