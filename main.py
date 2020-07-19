@@ -113,25 +113,27 @@ class Iwindow(QtWidgets.QMainWindow, gui):
 
     def nextImg(self):
         if self.cntr < self.numImages -1:
+            self.image_viewer.saveJson()
             self.cntr += 1
             self.image_viewer.loadImage(self.logs[self.cntr]['path'])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
             #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
-            self.image_viewer.saveJson()
+
         else:
             QMessageBox.warning(self, 'Sorry', 'No more Images!')
 
     def prevImg(self):
         if self.cntr > 0:
+            self.image_viewer.saveJson()
             self.cntr -= 1
             self.image_viewer.loadImage(self.logs[self.cntr]['path'])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
             #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
-            self.image_viewer.saveJson()
+
         else:
             QMessageBox.warning(self, 'Sorry', 'No previous Image!')
 
