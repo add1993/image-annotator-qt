@@ -108,7 +108,7 @@ class ImageViewer:
         self.qimage = QImage(imagePath)
         if instance is not None:
             penRectangle = QPen(Qt.green)
-            penRectangle.setWidth(20)
+            penRectangle.setWidth(1)
 
             painterInstance = QPainter(self.qimage)
             img_height = self.qlabel_image.height()
@@ -143,9 +143,9 @@ class ImageViewer:
                             painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
 
                         penText = QPen(Qt.red)
-                        penText.setWidth(1)
+                        #penText.setWidth(1)
                         painterInstance.setPen(penText)
-                        painterInstance.setFont(QFont('Decorative', 12))
+                        painterInstance.setFont(QFont('Decorative', 8))
                         if metadata != '':
                             comboBox.addItem(params["id"] + '-'+metadata)
                         elif bbox is not None and len(bbox) == 4:
