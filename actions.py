@@ -132,7 +132,7 @@ class ImageViewer:
                 else:
                     self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx][object_name][instance_idx]['selected'] = False
 
-            self.loadImage(self.parent.logs[self.parent.cntr]['path'], 0)
+            self.drawBbox(self.parent.logs[self.parent.cntr]['path'])
 
     def createFilterArea(self):
         instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
@@ -155,6 +155,9 @@ class ImageViewer:
                         continue
                     hlayout = QHBoxLayout()
                     obj_type_label = QLabel()
+                    #obj_type_cbox = QCheckBox(str(i) + '.' + object_type)
+                    #obj_type_cbox.setChecked(True)
+                    #obj_type_cbox.stateChanged.connect(lambda: self.removeSel(obj_type_cbox))
                     obj_type_label.setText(str(i) + '.' + object_type)
                     hlayout.addWidget(obj_type_label)
                     attrib = object_dict[object_type]
@@ -174,7 +177,7 @@ class ImageViewer:
                             self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j][
                                 'selected'] = True
 
-                        if params['selected'] is False and delete_marked == 1:
+                        if params['selected'] is False:
                             continue
 
                         bbox = params["bbox"]
@@ -201,8 +204,64 @@ class ImageViewer:
                 self.parent.qlist_objects.addItem(itemN)
                 self.parent.qlist_objects.setItemWidget(itemN, widget)
 
-    def loadImage(self, imagePath, delete_marked=1):
+    def drawBbox(self, imagePath):
         ''' To load and display new image.'''
+        instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
+        self.qimage = QImage(imagePath)
+
+        if instance is not None:
+            penRectangle = QPen(Qt.green)
+            penRectangle.setWidth(1)
+            painterInstance = QPainter(self.qimage)
+
+            for i in range(len(instance)):
+                object_dict = instance[i]
+                if 'selected' not in self.parent.json_data['samples'][self.parent.cntr]['instances'][i]:
+                    self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = True
+                    object_dict = self.parent.json_data['samples'][self.parent.cntr]['instances'][i]
+
+                if object_dict['selected'] is False:
+                    continue
+
+                for object_type in object_dict:
+                    if object_type == 'selected':
+                        continue
+
+                    attrib = object_dict[object_type]
+                    for j in range(len(attrib)):
+                        params = attrib[j]
+                        if params['selected'] is False:
+                            continue
+
+                        bbox = params["bbox"]
+
+
+                        penText = QPen(Qt.red)
+                        painterInstance.setPen(penText)
+                        painterInstance.setFont(QFont('Decorative', 8))
+                        painterInstance.drawText(max(bbox[0], 50), max(bbox[1] - 20, 50), params["id"])
+
+                        if bbox is not None and len(bbox) == 4:
+                            painterInstance.setPen(penRectangle)
+                            painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
+
+            painterInstance.end()
+
+        self.qpixmap = QPixmap(self.qlabel_image.size())
+        self.instance = instance
+        if not self.qimage.isNull():
+            # reset Zoom factor and Pan position
+            self.zoomX = 1
+            self.position = [0, 0]
+            self.qimage_scaled = self.qimage.scaled(self.qlabel_image.width(), self.qlabel_image.height(),
+                                                    QtCore.Qt.KeepAspectRatio)
+            self.update(instance)
+
+    def loadImage(self, imagePath):
+        ''' To load and display new image.'''
+        self.createFilterArea()
+        self.drawBbox(imagePath)
+        '''
         instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
         if self.current_instances == -1:
             self.current_instances = len(instance)
@@ -233,12 +292,6 @@ class ImageViewer:
                     hlayout.addWidget(obj_type_label)
                     attrib = object_dict[object_type]
                     comboBox = CheckableComboBox(self.parent)
-                    comboBox.setStyleSheet('''*    
-                    QComboBox QAbstractItemView 
-                        {
-                        min-width: 120px;
-                        }
-                    ''')
 
                     for j in range(len(attrib)):
                         params = attrib[j]
@@ -295,9 +348,14 @@ class ImageViewer:
             self.update(instance)
         else:
             pass
+            
+        '''
             #self.statusbar.showMessage('Cannot open this image! Try another one.', 5000)
 
-    def removeSel(self):
+    def removeSel(self, cbox=None):
+        decision = False
+        if cbox is not None:
+            decision = cbox.isChecked()
         listItems = self.parent.qlist_objects.selectedItems()
         if not listItems:
             QMessageBox.warning(self.parent, 'No object selected', 'Please select some objects to remove')
@@ -307,14 +365,15 @@ class ImageViewer:
             widget = self.parent.qlist_objects.itemWidget(item)
             label_widget = None
             for ch in widget.children():
-                if (ch.__class__.__name__ == 'QLabel'):
+                if (ch.__class__.__name__ == 'QCheckBox'):
                     label_widget = ch
 
             label_txt = label_widget.text()
             label_split = label_txt.split('.')
             object_idx = int(label_split[0])
-            self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx]['selected'] = False
-            del item
+            self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx]['selected'] = decision
+            if cbox is None:
+                del item
 
         self.loadImage(self.parent.logs[self.parent.cntr]['path'])
 
