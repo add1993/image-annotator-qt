@@ -37,6 +37,7 @@ class ImageViewer:
         self.position = [0, 0]      # position of top left corner of qimage_label w.r.t. qimage_scaled
         self.panFlag = False        # to enable or disable pan
         self.current_instances = -1
+        self.conf = 1.0
 
         self.qlabel_image.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.qlabel_image.autoFillBackground()
@@ -50,7 +51,16 @@ class ImageViewer:
         self.parent.remove_object.clicked.connect(self.removeSel)
         self.parent.add_object.clicked.connect(self.addObject)
         self.parent.add_instance.clicked.connect(self.addInstance)
+        self.parent.update_conf.clicked.connect(self.updateConfidence)
         self.parent.save_json.clicked.connect(self.saveJson)
+
+    def updateConfidence(self):
+        text = self.parent.confidence_lineedit.text()
+        try:
+            self.conf = float(text)
+            self.loadImage(self.parent.logs[self.parent.cntr]['path'], self.conf)
+        except ValueError:
+            QMessageBox.warning(self.parent, 'Input Error', 'Please enter valid float value')
 
     def addInstance(self):
         listItems = self.parent.qlist_objects.selectedItems()
@@ -67,6 +77,7 @@ class ImageViewer:
                         instance = str(ch.count()) + '.'+instance
                         ch.addItem(instance)
                         break
+
 
     def saveJson(self):
         #remaining_instances = []
@@ -132,9 +143,9 @@ class ImageViewer:
                 else:
                     self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx][object_name][instance_idx]['selected'] = False
 
-            self.drawBbox(self.parent.logs[self.parent.cntr]['path'])
+            self.drawBbox(self.parent.logs[self.parent.cntr]['path'], self.conf)
 
-    def createFilterArea(self):
+    def createFilterArea(self, conf):
         instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
         if self.current_instances == -1:
             self.current_instances = len(instance)
@@ -177,7 +188,7 @@ class ImageViewer:
                             self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j][
                                 'selected'] = True
 
-                        if params['selected'] is False:
+                        if params['selected'] is False or (conf is not None and params['conf'] < conf):
                             continue
 
                         bbox = params["bbox"]
@@ -204,7 +215,7 @@ class ImageViewer:
                 self.parent.qlist_objects.addItem(itemN)
                 self.parent.qlist_objects.setItemWidget(itemN, widget)
 
-    def drawBbox(self, imagePath):
+    def drawBbox(self, imagePath, conf=None):
         ''' To load and display new image.'''
         instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
         self.qimage = QImage(imagePath)
@@ -230,11 +241,10 @@ class ImageViewer:
                     attrib = object_dict[object_type]
                     for j in range(len(attrib)):
                         params = attrib[j]
-                        if params['selected'] is False:
+                        if params['selected'] is False or (conf is not None and params['conf'] < conf):
                             continue
 
                         bbox = params["bbox"]
-
 
                         penText = QPen(Qt.red)
                         painterInstance.setPen(penText)
@@ -257,105 +267,18 @@ class ImageViewer:
                                                     QtCore.Qt.KeepAspectRatio)
             self.update(instance)
 
-    def loadImage(self, imagePath):
+    def loadImage(self, imagePath, conf=None):
         ''' To load and display new image.'''
-        self.createFilterArea()
-        self.drawBbox(imagePath)
-        '''
-        instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
-        if self.current_instances == -1:
-            self.current_instances = len(instance)
-        self.qimage = QImage(imagePath)
-        if instance is not None:
-            penRectangle = QPen(Qt.green)
-            penRectangle.setWidth(1)
-
-            painterInstance = QPainter(self.qimage)
-
-            self.parent.qlist_objects.clear()
-            for i in range(len(instance)):
-                object_dict = instance[i]
-                if 'selected' not in self.parent.json_data['samples'][self.parent.cntr]['instances'][i]:
-                    self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = True
-                    object_dict = self.parent.json_data['samples'][self.parent.cntr]['instances'][i]
-
-                if object_dict['selected'] is False:
-                    continue
-
-                for object_type in object_dict:
-                    # print("Type : " + object_type)
-                    if object_type == 'selected':
-                        continue
-                    hlayout = QHBoxLayout()
-                    obj_type_label = QLabel()
-                    obj_type_label.setText(str(i) +'.'+object_type)
-                    hlayout.addWidget(obj_type_label)
-                    attrib = object_dict[object_type]
-                    comboBox = CheckableComboBox(self.parent)
-
-                    for j in range(len(attrib)):
-                        params = attrib[j]
-                        metadata = ''
-                        if 'selected' not in params:
-                            params['selected'] = True
-                            self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j]['selected'] = True
-
-                        if params['selected'] is False and delete_marked == 1:
-                            continue
-
-                        bbox = params["bbox"]
-                        if 'metadata' in params:
-                            metadata = params["metadata"]
-
-                        if self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j]['selected'] is True:
-                            penText = QPen(Qt.red)
-                            painterInstance.setPen(penText)
-                            painterInstance.setFont(QFont('Decorative', 8))
-                            painterInstance.drawText(max(bbox[0], 50), max(bbox[1] - 20, 50), params["id"])
-
-                            if bbox is not None and len(bbox) == 4:
-                                painterInstance.setPen(penRectangle)
-                                painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
-
-                        if metadata != '':
-                            comboBox.addItem(str(j)+'.'+params["id"] + '-'+metadata, self)
-                        elif bbox is not None and len(bbox) == 4:
-
-                            comboBox.addItem(str(j)+'.'+params["id"] + ':' + '['+str(int(bbox[0])) +','+str(int(bbox[1]))+','+str(int(bbox[2]))+','+str(int(bbox[3]))+']', self)
-                        else:
-                            comboBox.addItem(str(j)+'.'+params["id"], self)
-                    comboBox.model().itemChanged.connect(self.toggleBbox)
-                    hlayout.addWidget(comboBox)
-
-                hlayout.addStretch()
-                hlayout.setSizeConstraint(QLayout.SetFixedSize)
-
-                widget = QWidget()
-                widget.setLayout(hlayout)
-                itemN = QListWidgetItem()
-                itemN.setSizeHint(widget.sizeHint())
-                self.parent.qlist_objects.addItem(itemN)
-                self.parent.qlist_objects.setItemWidget(itemN, widget)
-            painterInstance.end()
-
-        self.qpixmap = QPixmap(self.qlabel_image.size())
-        self.instance = instance
-        if not self.qimage.isNull():
-            # reset Zoom factor and Pan position
-            self.zoomX = 1
-            self.position = [0, 0]
-            self.qimage_scaled = self.qimage.scaled(self.qlabel_image.width(), self.qlabel_image.height(), QtCore.Qt.KeepAspectRatio)
-            self.update(instance)
-        else:
-            pass
-            
-        '''
-            #self.statusbar.showMessage('Cannot open this image! Try another one.', 5000)
+        if conf is None:
+            conf = self.conf
+        self.createFilterArea(conf)
+        self.drawBbox(imagePath, conf)
 
     def removeSel(self, cbox=None):
         decision = False
-        if cbox is not None:
-            decision = cbox.isChecked()
+        #if cbox is not None:
+        #    decision = cbox.isChecked()
+        decision = False
         listItems = self.parent.qlist_objects.selectedItems()
         if not listItems:
             QMessageBox.warning(self.parent, 'No object selected', 'Please select some objects to remove')
@@ -365,7 +288,7 @@ class ImageViewer:
             widget = self.parent.qlist_objects.itemWidget(item)
             label_widget = None
             for ch in widget.children():
-                if (ch.__class__.__name__ == 'QCheckBox'):
+                if (ch.__class__.__name__ == 'QLabel'):
                     label_widget = ch
 
             label_txt = label_widget.text()
