@@ -358,8 +358,7 @@ class ImageViewer:
 
         if done is True and object_type != '':
             hlayout = QHBoxLayout()
-            num_instances = self.current_instances
-            self.current_instances += 1
+            num_instances = len(self.parent.json_data['samples'][self.parent.cntr]['instances'])
             #new_dict[object_type] = {}
             #new_dict['selected'] = True
             #self.parent.json_data['samples'][self.parent.cntr]['instances'].append(new_dict)
@@ -370,6 +369,11 @@ class ImageViewer:
             comboBox = CheckableComboBox(self.parent)
             hlayout.addWidget(comboBox)
 
+            obj_dict = {}
+            obj_dict['selected'] = True
+            obj_dict[object_type] = []
+            self.parent.json_data['samples'][self.parent.cntr]['instances'].append(obj_dict)
+
             hlayout.addStretch()
             hlayout.setSizeConstraint(QLayout.SetFixedSize)
             widget = QWidget()
@@ -378,11 +382,6 @@ class ImageViewer:
             itemN.setSizeHint(widget.sizeHint())
             self.parent.qlist_objects.addItem(itemN)
             self.parent.qlist_objects.setItemWidget(itemN, widget)
-
-            obj_dict = {}
-            obj_dict['selected'] = True
-            obj_dict[object_type] = []
-            self.parent.json_data['samples'][self.parent.cntr]['instances'].append(obj_dict)
 
     def update(self, instance=None):
         ''' This function actually draws the scaled image to the qlabel_image.
