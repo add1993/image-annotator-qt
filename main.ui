@@ -602,7 +602,7 @@ color:white;</string>
 			color:white;</string>
 					  </property>
 					  <property name="text">
-					   <string>Filter by Confidence</string>
+					   <string>Update Confidence</string>
 					  </property>
 					  <property name="toolTip">
 					   <string></string>

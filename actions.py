@@ -6,21 +6,22 @@ import json
 
 # subclass
 class CheckableComboBox(QComboBox):
-    # once there is a checkState set, it is rendered
-    # here we assume default Unchecked
-    #self.entry = None
     def addItem(self, item, parent=None):
         super(CheckableComboBox, self).addItem(item)
         item = self.model().item(self.count() - 1, 0)
         item.setFlags(QtCore.Qt.ItemIsUserCheckable | QtCore.Qt.ItemIsEnabled)
         item.setCheckState(QtCore.Qt.Checked)
 
-        #if parent is not None:
-        #    self.model().itemChanged.connect(parent.toggleBbox)
-
     def itemChecked(self, index):
         item = self.model().item(index, 0)
         return item.checkState() == QtCore.Qt.Checked
+
+    def toggle(self, index):
+        item = self.model().item(index, 0)
+        if item.checkState()  == QtCore.Qt.Checked:
+            item.setCheckState(QtCore.Qt.Unchecked)
+        else:
+            item.setCheckState(QtCore.Qt.Checked)
 
 class ImageViewer:
     ''' Basic image viewer class to show an image with zoom and pan functionaities.
@@ -37,7 +38,7 @@ class ImageViewer:
         self.position = [0, 0]      # position of top left corner of qimage_label w.r.t. qimage_scaled
         self.panFlag = False        # to enable or disable pan
         self.current_instances = -1
-        self.conf = 1.0
+        self.conf = self.parent.json_data['samples'][self.parent.cntr]['img_conf']
 
         self.qlabel_image.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.qlabel_image.autoFillBackground()
@@ -58,7 +59,28 @@ class ImageViewer:
         text = self.parent.confidence_lineedit.text()
         try:
             self.conf = float(text)
-            self.loadImage(self.parent.logs[self.parent.cntr]['path'], self.conf)
+            self.parent.json_data['samples'][self.parent.cntr]['img_conf'] = self.conf
+
+            for i in range(len(self.parent.json_data['samples'][self.parent.cntr]['instances'])):
+                obj_dict = self.parent.json_data['samples'][self.parent.cntr]['instances'][i]
+                count = 0
+                for object_type in obj_dict:
+                    if object_type == 'selected':
+                        continue
+                    for j in range(len(obj_dict[object_type])):
+                        if obj_dict[object_type][j]['conf'] >= self.conf:
+                            self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j]['selected'] = True
+                        else:
+                            self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j][
+                                'selected'] = False
+                            count += 1
+
+                    if len(obj_dict[object_type]) == count:
+                        self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = False
+                    else:
+                        self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = True
+
+            self.loadImage(self.parent.logs[self.parent.cntr]['path'])
         except ValueError:
             QMessageBox.warning(self.parent, 'Input Error', 'Please enter valid float value')
 
@@ -70,14 +92,30 @@ class ImageViewer:
         instance, done = QInputDialog.getText(self.parent, 'Input Dialog', 'Enter new instance')
 
         if done is True and instance != '':
+            self.isInstance = True
             for item in listItems:
                 widget = self.parent.qlist_objects.itemWidget(item)
+                object_idx = -1
+                object_name = ''
+                instance_name = ''
+                instance_dict = {}
+                w2 = None
                 for ch in widget.children():
+                    if (ch.__class__.__name__ == 'QLabel'):
+                        object_arr = ch.text().split('.')
+                        object_idx = int(object_arr[0])
+                        object_name = object_arr[1]
                     if (ch.__class__.__name__ == 'CheckableComboBox'):
+                        instance_name = instance
                         instance = str(ch.count()) + '.'+instance
-                        ch.addItem(instance)
+                        w2 = ch
                         break
-
+                instance_dict['id'] = instance_name
+                instance_dict['bbox'] = None
+                instance_dict['conf'] = 100.0
+                instance_dict['selected'] = True
+                self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx][object_name].append(instance_dict)
+                w2.addItem(instance)
 
     def saveJson(self):
         #remaining_instances = []
@@ -110,7 +148,6 @@ class ImageViewer:
             #remaining_instances.append(curr_obj_dict)
 
         #self.parent.json_data['samples'][self.parent.cntr]['instances'] = remaining_instances
-
         with open(self.parent.json_file, 'w') as outfile:
             json.dump(self.parent.json_data, outfile, indent=4)
 
@@ -143,7 +180,7 @@ class ImageViewer:
                 else:
                     self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx][object_name][instance_idx]['selected'] = False
 
-            self.drawBbox(self.parent.logs[self.parent.cntr]['path'], self.conf)
+            self.drawBbox(self.parent.logs[self.parent.cntr]['path'], self.parent.json_data['samples'][self.parent.cntr]['img_conf'])
 
     def createFilterArea(self, conf):
         instance = self.parent.json_data['samples'][self.parent.cntr]['instances']
@@ -158,8 +195,8 @@ class ImageViewer:
                     self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = True
                     object_dict = self.parent.json_data['samples'][self.parent.cntr]['instances'][i]
 
-                if object_dict['selected'] is False:
-                    continue
+                #if object_dict['selected'] is False:
+                #    continue
 
                 for object_type in object_dict:
                     if object_type == 'selected':
@@ -179,7 +216,7 @@ class ImageViewer:
                                 min-width: 120px;
                                 }
                             ''')
-
+                    uncheck_count = 0
                     for j in range(len(attrib)):
                         params = attrib[j]
                         metadata = ''
@@ -188,32 +225,48 @@ class ImageViewer:
                             self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j][
                                 'selected'] = True
 
-                        if params['selected'] is False or (conf is not None and params['conf'] < conf):
-                            continue
-
                         bbox = params["bbox"]
                         if 'metadata' in params:
                             metadata = params["metadata"]
 
                         if metadata != '':
                             comboBox.addItem(str(j) + '.' + params["id"] + '-' + metadata, self)
-                        elif bbox is not None and len(bbox) == 4:
-                            comboBox.addItem(str(j) + '.' + params["id"] + ':' + '[' + str(int(bbox[0])) + ',' + str(
-                                int(bbox[1])) + ',' + str(int(bbox[2])) + ',' + str(int(bbox[3])) + ']', self)
+                        elif (bbox is not None and len(bbox) == 4):
+                            comboBox.addItem(str(j) + '.' + params["id"] + ': conf  ' + str(params['conf']), self)
                         else:
-                            comboBox.addItem(str(j) + '.' + params["id"], self)
+                            comboBox.addItem(str(j) + '.' + params["id"] + ': conf  ' + str(params['conf']), self)
+
+                        if params['selected'] is False or (conf is not None and params['conf'] < conf):
+                            if comboBox.itemChecked(j):
+                                comboBox.toggle(j)
+                                self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j][
+                                    'selected'] = False
+                            uncheck_count += 1
+                        elif (conf is not None and (params['conf'] >= conf)):
+                            if not comboBox.itemChecked(j):
+                                comboBox.toggle(j)
+                            self.parent.json_data['samples'][self.parent.cntr]['instances'][i][object_type][j][
+                                'selected'] = True
+
+                    #item = comboBox.model().item(comboBox.count() - 1, 0)
+                    #item.emitDataChanged.connect(self.toggleBbox)
                     comboBox.model().itemChanged.connect(self.toggleBbox)
                     hlayout.addWidget(comboBox)
 
-                hlayout.addStretch()
-                hlayout.setSizeConstraint(QLayout.SetFixedSize)
+                if comboBox.count() - uncheck_count > 0:
+                    self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = True
+                    hlayout.addStretch()
+                    hlayout.setSizeConstraint(QLayout.SetFixedSize)
 
-                widget = QWidget()
-                widget.setLayout(hlayout)
-                itemN = QListWidgetItem()
-                itemN.setSizeHint(widget.sizeHint())
-                self.parent.qlist_objects.addItem(itemN)
-                self.parent.qlist_objects.setItemWidget(itemN, widget)
+                    widget = QWidget()
+                    widget.setLayout(hlayout)
+                    itemN = QListWidgetItem()
+                    itemN.setSizeHint(widget.sizeHint())
+                    self.parent.qlist_objects.addItem(itemN)
+                    self.parent.qlist_objects.setItemWidget(itemN, widget)
+                else:
+                    self.parent.json_data['samples'][self.parent.cntr]['instances'][i]['selected'] = False
+                self.parent.confidence_lineedit.setText(str(self.parent.json_data['samples'][self.parent.cntr]['img_conf']))
 
     def drawBbox(self, imagePath, conf=None):
         ''' To load and display new image.'''
@@ -246,12 +299,11 @@ class ImageViewer:
 
                         bbox = params["bbox"]
 
-                        penText = QPen(Qt.red)
-                        painterInstance.setPen(penText)
-                        painterInstance.setFont(QFont('Decorative', 8))
-                        painterInstance.drawText(max(bbox[0], 50), max(bbox[1] - 20, 50), params["id"])
-
                         if bbox is not None and len(bbox) == 4:
+                            penText = QPen(Qt.red)
+                            painterInstance.setPen(penText)
+                            painterInstance.setFont(QFont('Decorative', 8))
+                            painterInstance.drawText(max(bbox[0], 50), max(bbox[1] - 20, 50), params["id"])
                             painterInstance.setPen(penRectangle)
                             painterInstance.drawRect(bbox[0], bbox[1], bbox[2], bbox[3])
 
@@ -269,13 +321,11 @@ class ImageViewer:
 
     def loadImage(self, imagePath, conf=None):
         ''' To load and display new image.'''
-        if conf is None:
-            conf = self.conf
+        conf = self.parent.json_data['samples'][self.parent.cntr]['img_conf']
         self.createFilterArea(conf)
         self.drawBbox(imagePath, conf)
 
     def removeSel(self, cbox=None):
-        decision = False
         #if cbox is not None:
         #    decision = cbox.isChecked()
         decision = False
@@ -283,6 +333,7 @@ class ImageViewer:
         if not listItems:
             QMessageBox.warning(self.parent, 'No object selected', 'Please select some objects to remove')
             return
+
         for item in listItems:
             #selected = self.parent.qlist_objects.takeItem(self.parent.qlist_objects.row(item))
             widget = self.parent.qlist_objects.itemWidget(item)
@@ -295,6 +346,8 @@ class ImageViewer:
             label_split = label_txt.split('.')
             object_idx = int(label_split[0])
             self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx]['selected'] = decision
+            for i in range(len(self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx][label_split[1]])):
+               self.parent.json_data['samples'][self.parent.cntr]['instances'][object_idx][label_split[1]][i]['selected'] = False
             if cbox is None:
                 del item
 
@@ -310,9 +363,9 @@ class ImageViewer:
             #new_dict[object_type] = {}
             #new_dict['selected'] = True
             #self.parent.json_data['samples'][self.parent.cntr]['instances'].append(new_dict)
-            object_type = str(num_instances) + '.' + object_type
+            object_label = str(num_instances) + '.' + object_type
             obj_type_label = QLabel()
-            obj_type_label.setText(object_type)
+            obj_type_label.setText(object_label)
             hlayout.addWidget(obj_type_label)
             comboBox = CheckableComboBox(self.parent)
             hlayout.addWidget(comboBox)
@@ -326,6 +379,10 @@ class ImageViewer:
             self.parent.qlist_objects.addItem(itemN)
             self.parent.qlist_objects.setItemWidget(itemN, widget)
 
+            obj_dict = {}
+            obj_dict['selected'] = True
+            obj_dict[object_type] = []
+            self.parent.json_data['samples'][self.parent.cntr]['instances'].append(obj_dict)
 
     def update(self, instance=None):
         ''' This function actually draws the scaled image to the qlabel_image.

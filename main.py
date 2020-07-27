@@ -113,7 +113,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
 
     def nextImg(self):
         if self.cntr < self.numImages -1:
-            self.image_viewer.saveJson()
+            #self.image_viewer.saveJson()
             self.cntr += 1
             self.image_viewer.loadImage(self.logs[self.cntr]['path'])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
@@ -126,7 +126,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
 
     def prevImg(self):
         if self.cntr > 0:
-            self.image_viewer.saveJson()
+            #self.image_viewer.saveJson()
             self.cntr -= 1
             self.image_viewer.loadImage(self.logs[self.cntr]['path'])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
