@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-
-''' A basic GUi to use ImageViewer class to show its functionalities and use cases. '''
+'''
+    Author : Ayush Dobhal
+    Date created : 06/28/2020
+    Description : Image annotator
+'''
 
 from PyQt5 import *
 from PyQt5 import QtCore, QtWidgets, QtGui, uic

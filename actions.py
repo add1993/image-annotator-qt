@@ -1,3 +1,8 @@
+'''
+    Author : Ayush Dobhal
+    Date created : 06/29/2020
+    Description : Actions file
+'''
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
