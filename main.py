@@ -45,7 +45,7 @@ class Iwindow(QtWidgets.QMainWindow, gui):
             if self.json_data is not None:
                 img_arr = self.json_data["samples"]
                 for i in range(len(img_arr)):
-                    image_obj = {'name': str(img_arr[i]["id"]), 'path': img_arr[i]["img_path"]}
+                    image_obj = {'name': str(img_arr[i]["img_path"].split('/')[-1]), 'path': img_arr[i]["img_path"]}
                     image_list.append(image_obj)
             return image_list
 
@@ -56,11 +56,10 @@ class Iwindow(QtWidgets.QMainWindow, gui):
                     image_obj = {'name': file, 'path': im_path}
                     image_list.append(image_obj)
 
-
         return image_list
 
     def __connectEvents(self):
-        self.open_folder.clicked.connect(self.selectDir)
+        #self.open_folder.clicked.connect(self.selectDir)
         self.next_im.clicked.connect(self.nextImg)
         self.prev_im.clicked.connect(self.prevImg)
         self.save_im.clicked.connect(self.image_viewer.saveJson)
@@ -116,26 +115,26 @@ class Iwindow(QtWidgets.QMainWindow, gui):
 
     def nextImg(self):
         if self.cntr < self.numImages -1:
-            #self.image_viewer.saveJson()
+            self.image_viewer.saveJson()
             self.cntr += 1
             self.image_viewer.loadImage(self.logs[self.cntr]['path'])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
-            #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
+            self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
 
         else:
             QMessageBox.warning(self, 'Sorry', 'No more Images!')
 
     def prevImg(self):
         if self.cntr > 0:
-            #self.image_viewer.saveJson()
+            self.image_viewer.saveJson()
             self.cntr -= 1
             self.image_viewer.loadImage(self.logs[self.cntr]['path'])
             #self.qlist_images.setItemSelected(self.items[self.cntr], True)
             self.items[self.cntr].setSelected(True)
             self.qlist_images.scrollToItem(self.items[self.cntr], QAbstractItemView.PositionAtTop)
-            #self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
+            self.statusbar.showMessage('Path : ' + self.json_data['samples'][self.cntr]['img_path'])
 
         else:
             QMessageBox.warning(self, 'Sorry', 'No previous Image!')
